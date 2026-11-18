@@ -1,0 +1,26 @@
+# environment and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.import_linter_cache/
+.DS_Store
+
+# build outputs (make native, make wheels, make docs, make coverage*)
+build/
+dist/
+site/
+packages/idun/src/idun/_native/
+.coverage
+.coverage.*
+*.profraw
+
+# local data and caches (idun_numerai.data.build_cache's packed datasets, downloads)
+/data/
+
+# benchmarks/openml.py's downloads and records
+/benchmarks/data/
+/benchmarks/records/

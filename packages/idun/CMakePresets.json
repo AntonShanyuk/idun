@@ -1,0 +1,27 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "release",
+      "displayName": "Release: optimized, written into src/idun/_native",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "coverage",
+      "displayName": "Coverage: llvm-cov instrumented, written into build/coverage",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/coverage",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "IDUN_COVERAGE": "ON",
+        "IDUN_NATIVE_OUT": "${sourceDir}/build/coverage/lib"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "release", "configurePreset": "release" },
+    { "name": "coverage", "configurePreset": "coverage" }
+  ]
+}

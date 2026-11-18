@@ -1,0 +1,69 @@
+site_name: idun
+site_description: Gradient boosting, TabM and RealMLP on the Apple silicon GPU and on NVIDIA
+repo_url: https://github.com/AntonShanyuk/idun
+edit_uri: ""
+strict: true
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: {icon: material/weather-night, name: Dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: {icon: material/weather-sunny, name: Light mode}
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [packages/idun/src, packages/idun-numerai/src]
+          options:
+            docstring_style: numpy
+            show_source: false
+            members_order: source
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc: {permalink: true}
+  - pymdownx.superfences
+  - pymdownx.highlight
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Learners:
+      - idun_gbm: learners/gbm.md
+      - idun_tabm: learners/tabm.md
+      - idun_realmlp: learners/realmlp.md
+      - JARF: learners/jarf.md
+  - Data: data.md
+  - Performance guide: performance.md
+  - Benchmarks: benchmarks.md
+  - Determinism and testing: testing.md
+  - Reference:
+      - Python API: api/python-api.md
+      - API reference: reference.md
+      - Model files: api/model-format.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Apple silicon: architecture/apple-silicon.md
+      - Backends: architecture/backend-interface.md
+      - Determinism: architecture/determinism.md
+      - Data layout: architecture/data-layout.md
+      - Metal kernels: architecture/metal-kernels.md
+      - Networks: architecture/networks.md
+      - JARF: architecture/jarf.md
+      - Provenance: architecture/provenance.md
+  - Contributing:
+      - How to contribute: contributing.md
+      - Setup: development/setup.md
+      - Coding guidelines: development/coding-guidelines.md
+      - Testing: development/testing.md
+  - Changelog: changelog.md

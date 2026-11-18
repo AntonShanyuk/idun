@@ -1,0 +1,40 @@
+[project]
+name = "idun-numerai"
+version = "2.0.0"
+description = "Numerai on top of idun: the data, walk-forward refits, labels, scoring and model uploads."
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Anton Shaniuk" }]
+keywords = ["Numerai", "tabular", "gradient boosting", "TabM", "RealMLP"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+# The port builds on idun; its own dependencies stay out of idun. Each release pins the idun of the same version.
+dependencies = [
+    "cloudpickle>=3.1,<4",
+    "idun==2.0.0",
+    "numerapi>=3.1.1,<4",
+    "pyarrow>=25,<27",
+    "scipy>=1.18,<2",
+]
+
+[project.urls]
+Homepage = "https://github.com/AntonShanyuk/idun"
+Documentation = "https://github.com/AntonShanyuk/idun/tree/main/docs"
+Changelog = "https://github.com/AntonShanyuk/idun/blob/main/CHANGELOG.md"
+Issues = "https://github.com/AntonShanyuk/idun/issues"
+
+[build-system]
+requires = ["uv_build>=0.9.9,<0.10"]
+build-backend = "uv_build"

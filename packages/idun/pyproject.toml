@@ -1,0 +1,69 @@
+[project]
+name = "idun"
+version = "2.0.0"
+description = "Tabular learners for the GPU (Metal on Apple silicon, CUDA on NVIDIA): idun_gbm, idun_tabm and idun_realmlp, with CPU reference backends."
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Anton Shaniuk" }]
+keywords = ["gradient boosting", "tabular", "deep learning", "TabM", "RealMLP", "Metal", "Apple silicon", "CUDA", "NVIDIA", "GPU"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+# Runtime dependencies of the `idun` package only: NumPy and numba. pandas and Arrow are accepted as inputs, not required
+# (tests/unit/test_dependencies.py). numba generates the CPU backends' code, so its range widens only with a CI leg that
+# checks the bits.
+dependencies = [
+    "numpy>=2.5,<3",
+    "numba>=0.68,<0.69",
+]
+
+[project.urls]
+Homepage = "https://github.com/AntonShanyuk/idun"
+Documentation = "https://github.com/AntonShanyuk/idun/tree/main/docs"
+Changelog = "https://github.com/AntonShanyuk/idun/blob/main/CHANGELOG.md"
+Issues = "https://github.com/AntonShanyuk/idun/issues"
+
+[build-system]
+requires = ["scikit-build-core>=1.1.1,<2"]
+build-backend = "scikit_build_core.build"
+
+# scikit-build-core drives CMakeLists.txt. The platform wheel installs idun/_native/libidun_metal.dylib beside the
+# package and its MSL sources; the copy `make native` writes into the source tree is never packaged (sdist.exclude also
+# filters the files a wheel copies from src/). The library is loaded through ctypes, not built against Python, so one py3
+# wheel serves every Python version.
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+cmake.version = ">=3.28"
+cmake.build-type = "Release"
+cmake.define = { CMAKE_OSX_DEPLOYMENT_TARGET = "15.0" }  # the wheel tag; CMakeLists.txt sets the same
+ninja.version = ">=1.11"
+build-dir = "build/wheel/{wheel_tag}"
+wheel.packages = ["src/idun"]
+wheel.py-api = "py3"
+wheel.exclude = ["**/__pycache__/**"]
+sdist.exclude = ["build/", "src/idun/_native/"]
+
+# The pure wheel (py3-none-any) for Linux and Intel Macs: no CMake, no library; `backend="metal"` raises
+# BackendUnavailableError there and the CPU backends run.
+[[tool.scikit-build.overrides]]
+if.env.IDUN_PURE_WHEEL = true
+wheel.cmake = false
+wheel.platlib = false
+wheel.py-api = "py3"
+
+# Editable installs (the workspace's `uv sync`) skip CMake: development builds the library with `make native`.
+[[tool.scikit-build.overrides]]
+if.state = "editable"
+wheel.cmake = false
+editable.mode = "inplace"

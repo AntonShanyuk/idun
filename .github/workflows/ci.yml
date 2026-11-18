@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --frozen
+      - run: uv run --frozen ruff format --check
+      - run: uv run --frozen ruff check
+      - run: uv run --frozen mypy
+      - run: uv run --frozen lint-imports
+      - run: uv run --frozen clang-format --dry-run --Werror $(find packages/idun/native packages/idun/src/idun \( -name '*.mm' -o -name '*.h' -o -name '*.metal' -o -name '*.cu' \) -type f)
+
+  # The CPU backends on Linux, x86-64 and arm64, on every supported Python; the tests that need a GPU or NVIDIA's
+  # compiler are deselected by marker.
+  cpu:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        python: ["3.12", "3.13", "3.14"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --frozen --python ${{ matrix.python }}
+      - run: uv run --frozen pytest -m "not metal and not cuda and not nvrtc"
+
+  # A report only: Linux does not reach the Metal code, so the 90 % floor is enforced by `make coverage` on a Mac.
+  coverage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --frozen
+      - run: NUMBA_DISABLE_JIT=1 uv run --frozen pytest -q -m "not metal and not cuda and not nvrtc" --cov --cov-report=term --cov-fail-under=0
+
+  # Every test on Apple silicon, Metal included. Hosted macOS runners are virtual machines; until they are shown to run
+  # Metal compute, this job reports without blocking, and the Metal suite runs on real Macs before each release.
+  macos:
+    runs-on: macos-15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --frozen
+      - run: make native
+      - run: uv run --frozen python -c "from idun.metal import runtime; print(runtime.probe())"
+      - run: uv run --frozen pytest -m "not cuda and not nvrtc"
+
+  wheels:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: make wheels
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  # The pure wheel installed on its own on Linux: idun_gbm fits and predicts on the CPU.
+  pure-wheel:
+    needs: wheels
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - uses: astral-sh/setup-uv@v10
+      - run: uv venv --python 3.13 && uv pip install dist/idun-*-py3-none-any.whl
+      - run: |
+          .venv/bin/python - <<'EOF'
+          import numpy as np
+          from idun.gbm import GBMRegressor
+          rng = np.random.default_rng(0)
+          X = rng.normal(size=(2000, 5))
+          y = X[:, 0] - 2 * X[:, 1] + rng.normal(size=2000)
+          model = GBMRegressor(num_trees=20, backend="cpu").fit(X, y)
+          print(model.score(X, y))
+          EOF
+
+  # Every CUDA kernel source compiles under NVRTC without a warning; the runner has no GPU, and the `nvrtc` tests need
+  # none. The CUDA suite itself runs on NVIDIA GPUs before each release (CONTRIBUTING.md).
+  nvrtc:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --frozen --group nvrtc
+      - run: uv run --frozen pytest -q -m nvrtc tests/unit
+
+  docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --frozen --group docs
+      - run: uv run --frozen --group docs mkdocs build --strict

@@ -1,0 +1,213 @@
+# The idun workspace: two distributions, `idun` (packages/idun) and `idun-numerai` (packages/idun-numerai), released
+# together. The root is not a package; `uv sync` installs both members and the development tools.
+[tool.uv.workspace]
+members = ["packages/idun", "packages/idun-numerai"]
+
+[tool.uv.sources]
+idun = { workspace = true }
+idun-numerai = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "idun",
+    "idun-numerai",
+    "pytest>=9.1,<10",
+    "pytest-cov>=7.1,<8",
+    "pytest-timeout>=2.4,<3",
+    "hypothesis>=6.170,<7",
+    "ruff>=0.17.3,<0.18",
+    "mypy>=2.4,<3",
+    "import-linter>=2.15,<3",
+    "cmake>=4.4,<5",
+    "ninja>=1.13,<2",
+    "clang-format>=23.1,<24",
+    # Test inputs and references: pandas and Arrow tables as inputs, numerai-tools as the reference of the scores.
+    "pandas>=3.1,<4",
+    "pyarrow>=25,<27",
+    "numerai-tools>=0.7.2,<0.8",
+]
+# NVRTC, NVIDIA's runtime compiler, for `make cuda-compile`: the CUDA kernel sources are compiled on Linux without a
+# GPU. Not a dependency of the packages: the CUDA backend takes the NVRTC it finds on the machine.
+nvrtc = ["nvidia-cuda-nvrtc>=13,<14; sys_platform == 'linux'"]
+# The outside libraries benchmarks/openml.py compares idun with (docs/benchmarks.md); not a default group:
+# `uv run --group benchmarks ...`.
+benchmarks = [
+    "scikit-learn>=1.9,<2",
+    "lightgbm>=4.7,<5",
+    "xgboost>=3,<4",
+    "torch>=2.14.1,<2.15",
+    "tabm==0.0.3",
+    "pytabkit==1.7.3",
+]
+docs = [
+    "mkdocs>=1.6.1,<2",
+    "mkdocs-material>=9.7,<10",
+    "mkdocstrings-python>=2.0,<3",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Lint and format (docs/development/coding-guidelines.md)
+# ---------------------------------------------------------------------------------------------------------------------
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["packages/idun/src", "packages/idun-numerai/src", "tests", "benchmarks", "examples"]
+
+[tool.ruff.lint]
+select = [
+    "A", "ARG", "B", "C4", "D", "DTZ", "E", "ERA", "F", "FBT", "FURB", "G", "I", "ISC", "LOG", "N", "NPY", "PERF",
+    "PIE", "PL", "PT", "PTH", "Q", "RET", "RUF", "S", "SIM", "T10", "T20", "TC", "TID", "TRY", "UP", "W",
+]
+ignore = [
+    "D105",    # magic methods document themselves
+    "D107",    # __init__ is documented on the class
+    "PLR0913", # kernels and backends legitimately take many arguments
+    "PLR0917", # ... and numba kernels take them positionally (no keyword-only parameters in nopython mode)
+    "PLR2004", # numeric code is full of meaningful literals (bin counts, bit widths)
+    "TRY003",  # long, specific error messages are the point of failing loudly
+]
+
+# Docs and docstrings write maths with real symbols: U+2212 minus and U+00D7 times.
+allowed-confusables = ["−", "×"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.isort]
+known-first-party = ["idun", "idun_numerai", "tests"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"mlx".msg = "idun does not depend on MLX: its kernels are its own."
+"torch".msg = "idun does not depend on Torch: its kernels are its own."
+"lightgbm".msg = "idun does not depend on LightGBM."
+"sklearn".msg = "idun follows scikit-learn's conventions without importing it."
+"pandas".msg = "pandas is an accepted input, not a dependency: keep it out of idun's code."
+"numba.njit".msg = "Use idun._jit.njit: it pins fastmath off and caching on (docs/architecture/determinism.md)."
+"numba.jit".msg = "Use idun._jit.njit: it pins fastmath off and caching on (docs/architecture/determinism.md)."
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S603", "S607", "D", "ARG", "FBT", "PLR0912", "PLR0915", "N802", "N806"]
+"tests/numerai/test_score.py" = ["TID251"]  # numerai-tools (pandas) is the reference of the port's NumPy scores
+"tests/numerai/test_upload.py" = ["TID251"]  # Numerai hands the upload pandas DataFrames
+"packages/idun/src/idun/_jit.py" = ["TID251"]
+"benchmarks/**" = ["TID251", "T20", "S603"]  # the benchmark: outside libraries, a CLI
+"examples/**" = ["T20"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Types
+# ---------------------------------------------------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["packages/idun/src", "packages/idun-numerai/src", "tests", "benchmarks", "examples"]
+mypy_path = ["packages/idun/src", "packages/idun-numerai/src", "."]
+explicit_package_bases = true
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool", "possibly-undefined", "redundant-self"]
+
+[[tool.mypy.overrides]]
+module = ["numba.*", "llvmlite.*", "pyarrow", "pyarrow.*", "importlinter.*", "pandas", "pandas.*", "scipy.*", "sklearn.*", "lightgbm", "xgboost", "xgboost.*", "tabm", "pytabkit", "pytabkit.*", "numerai_tools", "numerai_tools.*"]
+ignore_missing_imports = true
+
+# The benchmarks group is not installed by default; mypy treats Torch as untyped either way.
+[[tool.mypy.overrides]]
+module = ["torch", "torch.*"]
+follow_imports = "skip"
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Architecture contracts (lint-imports). Lower layers never import upper ones; backends stay independent.
+# ---------------------------------------------------------------------------------------------------------------------
+[tool.importlinter]
+root_packages = ["idun", "idun_numerai"]
+
+[[tool.importlinter.contracts]]
+name = "idun does not depend on the Numerai port"
+type = "forbidden"
+source_modules = ["idun"]
+forbidden_modules = ["idun_numerai"]
+
+[[tool.importlinter.contracts]]
+name = "Device runtimes do not depend on model code"
+type = "forbidden"
+source_modules = ["idun.metal", "idun.cuda", "idun.device"]
+forbidden_modules = ["idun.gbm", "idun.nn", "idun.tabm", "idun.realmlp"]
+
+[[tool.importlinter.contracts]]
+name = "Leaf modules import nothing from idun"
+type = "forbidden"
+source_modules = ["idun.errors", "idun._jit"]
+forbidden_modules = ["idun.gbm", "idun.nn", "idun.tabm", "idun.realmlp", "idun.metal", "idun.cuda", "idun.device", "idun.data"]
+
+[[tool.importlinter.contracts]]
+name = "The shared RNG depends on nothing but the JIT helper"
+type = "forbidden"
+source_modules = ["idun.rng"]
+forbidden_modules = ["idun.gbm", "idun.nn", "idun.tabm", "idun.realmlp", "idun.metal", "idun.cuda", "idun.device", "idun.data"]
+
+[[tool.importlinter.contracts]]
+name = "The three learners are independent of each other (idun_gbm, idun_tabm, idun_realmlp)"
+type = "independence"
+modules = ["idun.gbm", "idun.tabm", "idun.realmlp"]
+
+[[tool.importlinter.contracts]]
+name = "The networks' shared core does not depend on any learner"
+type = "forbidden"
+source_modules = ["idun.nn"]
+forbidden_modules = ["idun.gbm", "idun.tabm", "idun.realmlp"]
+
+[[tool.importlinter.contracts]]
+name = "idun_gbm does not use the networks' core"
+type = "forbidden"
+source_modules = ["idun.gbm"]
+forbidden_modules = ["idun.nn"]
+
+[[tool.importlinter.contracts]]
+name = "The data layer does not depend on models or devices"
+type = "forbidden"
+source_modules = ["idun.data"]
+forbidden_modules = ["idun.gbm", "idun.nn", "idun.tabm", "idun.realmlp", "idun.metal", "idun.cuda", "idun.device"]
+
+[[tool.importlinter.contracts]]
+name = "JARF composes idun_gbm and idun_tabm; nothing below it imports it"
+type = "forbidden"
+source_modules = ["idun.gbm", "idun.nn", "idun.tabm", "idun.realmlp", "idun.metal", "idun.cuda", "idun.device", "idun.data", "idun.dataset"]
+forbidden_modules = ["idun.jarf"]
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Tests and coverage (docs/development/testing.md)
+# ---------------------------------------------------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "9.1"
+testpaths = ["tests/unit", "tests/numerai", "tests/e2e", "tests/benchmarks"]
+pythonpath = ["."]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
+xfail_strict = true
+# Every warning is an error, except idun.errors.MultiTargetQualityWarning on the experimental fits, matched by its
+# message so that pytest does not import idun before coverage starts.
+filterwarnings = ["error", "ignore:train_(multi|tabm|realmlp) (fits|trains) :UserWarning"]
+timeout = 300
+markers = [
+    "metal: needs the Apple GPU; fails (never skips) when Metal is unavailable. Deselect with -m 'not metal'.",
+    "cuda: needs an NVIDIA GPU, its driver and NVRTC; fails (never skips) without them. The Makefile deselects it.",
+    "nvrtc: needs NVRTC, the CUDA runtime compiler, and no GPU; fails (never skips) without it. The Makefile deselects it.",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["idun", "idun_numerai"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "@overload", "^\\s*\\.\\.\\.$"]

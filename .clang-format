@@ -1,0 +1,6 @@
+# C, Objective-C++ and MSL sources (native/, src/idun/**/*.metal). `make fmt` applies it, `make lint` checks it.
+BasedOnStyle: Google
+ColumnLimit: 120
+IndentWidth: 2
+DerivePointerAlignment: false
+PointerAlignment: Right

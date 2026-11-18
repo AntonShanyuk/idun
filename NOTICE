@@ -1,0 +1,39 @@
+idun
+Copyright 2026 Anton Shaniuk
+
+Licensed under the Apache License, Version 2.0 (LICENSE).
+
+The Metal GEMM kernel (idun/nn/kernels/metal/common.metal) is adapted from MLX's Steel GEMM
+(https://github.com/ml-explore/mlx): its tile loader's thread layout and its fragment lane coordinates. MLX's copyright
+and permission notice:
+
+  MIT License
+
+  Copyright © 2023 Apple Inc.
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+idun_tabm implements TabM: Yury Gorishniy, Akim Kotelnikov and Artem Babenko, "TabM: Advancing Tabular Deep Learning
+with Parameter-Efficient Ensembling", ICLR 2025, arXiv:2410.24210.
+
+idun_realmlp implements RealMLP-TD: David Holzmüller, Léo Grinsztajn and Ingo Steinwart, "Better by Default: Strong
+Pre-Tuned MLPs and Boosted Trees on Tabular Data", NeurIPS 2024, arXiv:2407.04491.
+
+idun_gbm follows LightGBM's model: Guolin Ke et al., "LightGBM: A Highly Efficient Gradient Boosting Decision Tree",
+NeurIPS 2017.
