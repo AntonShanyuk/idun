@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.1 (2026-11-18)
+
+- **idun_gbm**: a seed bag fitted side by side (`train_seeds` with `workers` > 1) no longer aborts the process when
+  its fits use `extra_trees` or a validation set. Each fit ran numba's parallel loops on the host from its own thread
+  (the thresholds' draws, the validation scores), and numba's workqueue threading layer, the only one numba has on a
+  Mac without OpenMP or TBB, ends the process when two threads run parallel loops at once. idun's parallel loops now
+  take turns. The models are the same, bit for bit.
+- **Build**: idun's sdist builds with macOS SDKs older than 26; 2.0.0's did not compile its Metal 4 check there.
+  The 2.0.0 wheels were not affected.
+- **idun-numerai**: requires idun 2.0.1; nothing else changed.
+
 ## 2.0.0 (2026-11-18)
 
 - **idun_gbm**: histogram gradient boosting with LightGBM's model and parameter names, on the CPU, Metal and CUDA,

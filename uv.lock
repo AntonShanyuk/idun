@@ -897,7 +897,7 @@ wheels = [
 
 [[package]]
 name = "idun"
-version = "2.0.0"
+version = "2.0.1"
 source = { editable = "packages/idun" }
 dependencies = [
     { name = "numba" },
@@ -912,7 +912,7 @@ requires-dist = [
 
 [[package]]
 name = "idun-numerai"
-version = "2.0.0"
+version = "2.0.1"
 source = { editable = "packages/idun-numerai" }
 dependencies = [
     { name = "cloudpickle" },

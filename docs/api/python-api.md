@@ -462,7 +462,7 @@ on an 8 GB Apple M1), so `workers=None` takes 3 or as many as fit (`idun.metal.r
 30 s, against 54 s one after another; two fits a GPU gained nothing); the fits are spread over the machine's GPUs in
 turn (two fits on two GPUs take one each), or all run on the GPU `IDUN_CUDA_DEVICE` names (one at a time unless
 `workers` says otherwise), and each fit releases its GPU memory before the next takes the GPU. `workers` > 1 needs `backend="metal"` or `"cuda"` (the CPU
-backend's parallel loops are not safe side by side; `ValueError` otherwise); duplicate or no seeds raise
+backend's parallel loops take turns, so its fits gain nothing side by side; `ValueError` otherwise); duplicate or no seeds raise
 `ValueError`.
 `predict_mean` is the bag's prediction: the mean of the models' raw predictions (float64 sum in model order, then
 float32).

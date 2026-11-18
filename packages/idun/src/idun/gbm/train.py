@@ -367,11 +367,11 @@ def train_seeds(
     gave about 2.4x the throughput of one after another. The models come back in ``seeds`` order, bit for bit as
     separate fits. ``workers`` None takes `SEED_WORKERS`, or fewer when the GPU's working set cannot hold them
     (`runtime.side_by_side`: one on an 8 GB M1, where fits side by side thrash); a larger explicit ``workers`` raises
-    ``ValueError``. ``workers`` > 1 needs a GPU backend (the CPU backend's parallel loops are not safe to run side by
-    side). With ``backend="cuda"``, ``workers`` None runs one fit on each GPU at a time (on two Tesla T4s a bag of four
-    seeds took 30 s against 54 s one after another; two fits a GPU gained nothing), and fits side by side are spread
-    over the GPUs (`idun.cuda.runtime.device_ordinals`: every GPU the driver lists, or the one ``$IDUN_CUDA_DEVICE``
-    names). A bag predicts the mean of its models' raw predictions (`predict_mean`).
+    ``ValueError``. ``workers`` > 1 needs a GPU backend (the CPU backend's parallel loops take turns, so its fits gain
+    nothing side by side). With ``backend="cuda"``, ``workers`` None runs one fit on each GPU at a time (on two Tesla
+    T4s a bag of four seeds took 30 s against 54 s one after another; two fits a GPU gained nothing), and fits side by
+    side are spread over the GPUs (`idun.cuda.runtime.device_ordinals`: every GPU the driver lists, or the one
+    ``$IDUN_CUDA_DEVICE`` names). A bag predicts the mean of its models' raw predictions (`predict_mean`).
 
     ``objective``: a custom objective for every seed (`train`'s ``objective``). Fits side by side call it from their
     own threads at the same time, so it must keep no state between calls, or the call must pass ``workers=1``.

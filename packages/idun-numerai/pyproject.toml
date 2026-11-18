@@ -1,6 +1,6 @@
 [project]
 name = "idun-numerai"
-version = "2.0.0"
+version = "2.0.1"
 description = "Numerai on top of idun: the data, walk-forward refits, labels, scoring and model uploads."
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
@@ -23,7 +23,7 @@ classifiers = [
 # The port builds on idun; its own dependencies stay out of idun. Each release pins the idun of the same version.
 dependencies = [
     "cloudpickle>=3.1,<4",
-    "idun==2.0.0",
+    "idun==2.0.1",
     "numerapi>=3.1.1,<4",
     "pyarrow>=25,<27",
     "scipy>=1.18,<2",

@@ -314,6 +314,21 @@ def test_a_leafwise_seed_bag_is_the_separate_fits(backend: str, workers: int) ->
             np.testing.assert_array_equal(getattr(model.forest, name), getattr(alone.forest, name), err_msg=name)
 
 
+@pytest.mark.parametrize(("backend", "workers"), SIDE_BY_SIDE)
+def test_a_seed_bag_drawing_and_scoring_on_the_host_is_the_separate_fits(backend: str, workers: int) -> None:
+    # Extra trees draw each node's thresholds, and a validation set scores each tree, with numba's parallel loops in
+    # every fit's thread: numba's workqueue threading layer aborts the process when two threads run them at once.
+    params = dataclasses.replace(SEEDS, extra_trees=True, num_trees=20)
+    data = make_tiny(600, n_countries=5, seed=21)
+    valid = [gbm.Validation(data, slice(400, 600))]
+    bag = gbm.train_seeds(params, data, rows=slice(0, 400), backend=backend, seeds=[3, 0, 7], workers=workers,
+                          valid=valid)  # fmt: skip
+    for seed, model in zip([3, 0, 7], bag, strict=True):
+        alone = gbm.train(dataclasses.replace(params, seed=seed), data, rows=slice(0, 400), backend=backend,
+                          valid=valid)  # fmt: skip
+        assert same_forest(model, alone)
+
+
 REGULARISED: list[dict[str, Any]] = [
     {"lambda_l1": 0.5},
     {"lambda_l1": 2.0, "lambda_l2": 1.0},
