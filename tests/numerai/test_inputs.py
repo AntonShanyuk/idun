@@ -1,7 +1,8 @@
+import mmap
+
 import numpy as np
 import pytest
 
-from idun.metal import runtime
 from idun.nn.inputs import MISSING_CLASS
 from idun_numerai import inputs
 
@@ -11,7 +12,7 @@ def test_classes_are_the_target_bins_and_missing_targets_are_marked() -> None:
     got = inputs.classes(target)
     assert got.shape == (6, 1)
     assert got.dtype == np.dtype(np.uint8)
-    assert got.__array_interface__["data"][0] % runtime.PAGE_BYTES == 0  # Metal wraps it without a copy
+    assert got.__array_interface__["data"][0] % mmap.PAGESIZE == 0  # page-aligned: Metal wraps it without a copy
     assert got[:, 0].tolist() == [0, 1, 2, 3, 4, MISSING_CLASS]
     two = inputs.classes(np.stack([target, 1 - target]))
     assert two.shape == (6, 2)
@@ -61,7 +62,7 @@ def test_per_era_z_is_the_oracle_bit_for_bit() -> None:
     z = inputs.per_era_z(targets, era)
     assert z.shape == (era.size, 3)
     assert z.dtype == np.dtype(np.float32)
-    assert z.__array_interface__["data"][0] % runtime.PAGE_BYTES == 0  # Metal wraps it without a copy
+    assert z.__array_interface__["data"][0] % mmap.PAGESIZE == 0  # page-aligned: Metal wraps it without a copy
     for k in range(3):
         np.testing.assert_array_equal(z[:, k], z_by_era(targets[k], era).astype(np.float32))
     assert float(z[50, 1]) == 0.0

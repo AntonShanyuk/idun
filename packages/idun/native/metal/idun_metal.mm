@@ -99,9 +99,11 @@ IDUN_API int32_t idun_probe(idun_device_info *out, char *err, size_t err_len) {
     out->supports_apple7 = [device supportsFamily:MTLGPUFamilyApple7] ? 1U : 0U;
     out->supports_apple9 = [device supportsFamily:MTLGPUFamilyApple9] ? 1U : 0U;
     out->supports_metal4 = 0U;  // the Metal 4 family exists from macOS 26; the library runs from macOS 15
+#if defined(__MAC_26_0) && __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_26_0  // an older SDK does not declare it
     if (@available(macOS 26.0, *)) {
       out->supports_metal4 = [device supportsFamily:MTLGPUFamilyMetal4] ? 1U : 0U;
     }
+#endif
   }
   return IDUN_OK;
 }
