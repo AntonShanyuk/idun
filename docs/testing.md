@@ -47,8 +47,8 @@ What has not been tested, stated plainly:
   M1 and an M4 only (MacBook Airs): no Pro, Max or Ultra chip, no M2 or M3.
 - **Platforms.** No Windows. Intel Macs and Linux are CPU only, and Linux on arm64 has had no GPU.
 - **Continuous integration has no GPU.** CI runs the CPU suite, the emulated-driver tests and the NVRTC compile checks;
-  GitHub's macOS runners may not run Metal, so the Metal suite runs on real Macs, and the CUDA suite on a Kaggle T4
-  pair, before each release.
+  GitHub's macOS runners are virtual machines whose GPU is not Apple7-family, which idun's Metal backend refuses, so
+  the Metal suite runs on real Macs, and the CUDA suite on a Kaggle T4 pair, before each release.
 - **JARF on CUDA** has one end-to-end test.
 - **Across backends, the networks** are held to tolerances of the reference, not to each other's bits: a model trained
   on Metal and one trained on CUDA from the same seed differ slightly.

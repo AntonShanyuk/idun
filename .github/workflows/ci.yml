@@ -45,18 +45,18 @@ jobs:
       - run: uv sync --frozen
       - run: NUMBA_DISABLE_JIT=1 uv run --frozen pytest -q -m "not metal and not cuda and not nvrtc" --cov --cov-report=term --cov-fail-under=0
 
-  # Every test on Apple silicon, Metal included. Hosted macOS runners are virtual machines; until they are shown to run
-  # Metal compute, this job reports without blocking, and the Metal suite runs on real Macs before each release.
+  # Apple silicon without Metal compute: hosted macOS runners are virtual machines whose GPU is not Apple7-family,
+  # which idun's Metal backend refuses, so the Metal suite runs on real Macs before each release. Here: the Metal
+  # library builds and probes the device, and the CPU tests pass on macOS.
   macos:
     runs-on: macos-15
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.3
       - run: uv sync --frozen
       - run: make native
       - run: uv run --frozen python -c "from idun.metal import runtime; print(runtime.probe())"
-      - run: uv run --frozen pytest -m "not cuda and not nvrtc"
+      - run: uv run --frozen pytest -m "not metal and not cuda and not nvrtc"
 
   wheels:
     runs-on: macos-15
